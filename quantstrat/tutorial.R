@@ -48,10 +48,15 @@ plot(LQD, col='black')
 
 add.indicator(strategy = strategy.st,
               name = "SMA",
+              arguments = list(x = quote(Cl(mktdata)), n = 50),
+              label = "SMA50")
+
+add.indicator(strategy = strategy.st,
+              name = "SMA",
               arguments = list(x = quote(Cl(mktdata)), n = 200),
               label = "SMA200")
 
-test = applyIndicators(strategy = strategy.st, mktdata = OHLC(LQD))
+mkt = applyIndicators(strategy = strategy.st, mktdata = OHLC(LQD))
 
 # Subsetting.
 HLC(LQD["2012-01-01/2012-01-07"])
@@ -77,9 +82,8 @@ add.indicator(strategy = strategy.st, name = "DVO",
               ),
               label = "DVO_2_126")
 
-test <- applyIndicators(strategy = strategy.st, mktdata = OHLC(LQD))
-test_subset <- test["2013-09-01/2013-09-05"]
-test_subset
+mkt <- applyIndicators(strategy = strategy.st, mktdata = OHLC(LQD))
+mkt["2013-09-01/2013-09-05"]
 
 # Signals. There are a few signal types:
 # - sigComparison,
@@ -103,7 +107,7 @@ add.signal(strategy.st,
            name = "sigCrossover",
            arguments = list(
              columns = c("SMA50", "SMA200"),
-             relationship = "lt"
+             relationship = "lte"
            ),
            label = "filterexit")
 
@@ -134,10 +138,10 @@ add.signal(strategy.st,
            ),
            label = "longentry")
 
-# Apply those signals.
-test_init <- applyIndicators(strategy.st, mktdata = OHLC(LQD))
+mkt = applyIndicators(strategy.st, mktdata = OHLC(LQD))
 
-test <- applySignals(strategy = strategy.st, mktdata = test_init)
+# Apply those signals.
+signals = applySignals(strategy = strategy.st, mktdata = mkt)
 
 # Rules are used to send orders, so converting money to asset
 # and vice versa.
@@ -218,7 +222,7 @@ chart.Posn(Portfolio = portfolio.st, Symbol = "LQD")
 
 sma50 = SMA(x = Cl(LQD), n = 50)
 sma200 = SMA(x = Cl(LQD), n = 200)
-dvo = DVO(HLC = HLC(LQD), nAvg = 2, percentlookback = 126)
+dvo = DVO(HLC = HLC(LQD), navg = 2, percentlookback = 126)
 
 add_TA(sma50, on = 1, col = "blue")
 add_TA(sma200, on = 1, col = "red")
