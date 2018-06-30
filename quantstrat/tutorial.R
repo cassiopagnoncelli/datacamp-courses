@@ -215,7 +215,8 @@ updateEndEq(account.st)
 # Analyze strategy.
 # 
 tStats = tradeStats(Portfolios = portfolio.st)
-tStats
+report = data.frame(t(tStats[,-c(1,2)]))
+report
 
 # Chart.
 chart.Posn(Portfolio = portfolio.st, Symbol = "LQD")
