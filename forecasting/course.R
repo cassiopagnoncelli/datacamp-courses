@@ -178,7 +178,7 @@ autoplot(fc) + autolayer(fitted(fc))
 summary(fc)
 
 # SES vs Naive comparison.
-train <- subset.ts(marathon, end = length(marathon) - 20)
+train <- subset(marathon, end = length(marathon) - 20)
 
 fcses <- ses(train, h = 20)
 fcnaive <- naive(train, h = 20)
@@ -403,4 +403,198 @@ fc2 <- forecast(fit2, h = 25)
 accuracy(fc1, qcement)
 accuracy(fc2, qcement)
 
-# Dynamic regression.
+# Dynamic regression, or ARIMA-X.
+# 
+# Essentially it is a regression model where the explanatory variables
+# are other time series,
+# 
+#   y[t] = b[0] + b[1] x[1,t] + b[2] x[2,t] + ... + b[r] x[r,t] + e[t],
+# 
+# the only difference being in dynamic regression e[t] is an ARIMA process
+# whereas in standard regression it is just white noise.
+# 
+# In practice it fits a linear regression on the xreg (or x[i,t]) then
+# fits an ARIMA model on the errors.
+# 
+# For instance, we want to forecast consumption using income as explanatory
+# variable (and vice versa). Clearly there is a relationship between those
+# two variables.
+# 
+autoplot(uschange[,1:2], facets = TRUE) +
+  xlab("Year") + ylab("") + ggtitle("US consumption and income (changes)")
+
+ggplot(aes(x = Income, y = Consumption), 
+       data = as.data.frame(uschange[,1:2])) +
+  geom_point() +
+  ggtitle("Quarterly changes in US consumption and personal income")
+
+fit = auto.arima(uschange[,"Consumption"], xreg = uschange[,"Income"])
+summary(fit)
+checkresiduals(fit) # yes, they do look like white noise, p-value > 0.05.
+
+fcast = forecast(fit, xreg = rep(.8, 8)) # needs to provide xreg
+autoplot(fcast) + xlab("Year") + ylab("% change")
+
+# Example on adverts.
+autoplot(advert, facets = TRUE)
+fit = auto.arima(advert[, "sales"], xreg = advert[, "advert"], stationary = T)
+fc = forecast(fit, xreg = rep(10, 6))
+autoplot(fc) + xlab("Month") + ylab("Sales")
+
+# Example on electricity.
+# autoplot(elecdemand[, c("Demand", "Temperature")], facets = FALSE)
+# 
+# xreg = cbind(MaxTemp = elecdemand[, "Temperature"],
+#              MaxTempSq = elecdemand[, "Temperature"]^2,
+#              Workday = elecdemand[,"WorkDay"])
+# 
+# fit = auto.arima(elecdemand[,"Demand"], xreg = xreg)
+# 
+# forecast(fit, xreg = cbind(20, 400, 1))
+# 
+
+# DYNAMIC HARMONIC REGRESSION.
+# It can approximate any periodic function.
+# 
+# Periodic seasonality can be handled using pairs of Fourier terms:
+# 
+#   s_k[t] = sin((2 pi k t) / m),  c_k[t] = cos((2 pi k t) / m)
+# 
+#      y[t] = c[0] + sum(a[k] s_k[t] + b[k] c_k[t], k = 1..K) + e[t]
+# 
+# where y[t] is local trend, e[t] is error, and s_k and c_k are
+# trigonometric terms.
+# 
+# Note. K cannot be more than half of the seasonal period, K <= m/2.
+# 
+# Because seasonality is modeled by the Fourier terms, normally we
+# use non-seasonal model ARIMA for modeling errors e[t].
+# 
+
+# Example on eating out. Australian coffee consumption.
+# Choose different K to see more complicated models (best is K = 5).
+K = 5
+
+fit = auto.arima(auscafe, 
+                 xreg = fourier(auscafe, K = K), 
+                 seasonal = FALSE, 
+                 lambda = 0)
+summary(fit)
+
+fit %>% forecast(xreg = fourier(auscafe, K = K, h = 24)) %>% 
+  forecast %>% autoplot
+
+# Example on gasoline.
+# Here we have terms s_k and c_k, k = 1..13, respecting the limit of K <= 26.
+harmonics = fourier(gasoline, K = 13)
+head(harmonics)
+
+fit = auto.arima(gasoline, xreg = harmonics, seasonal = FALSE)
+summary(fit)
+
+forecast(fit, xreg = fourier(gasoline, K = 13, h = 156)) %>% autoplot()
+
+# Multiple seasonalities.
+# Two seasonalities: 48 (one day of 1/2 hours) and 336 (one week)
+# 
+# auto.arima() would take a long time to fit a long time series such
+# as this one, so instead you will fit a standard regression model
+# with Fourier terms using the tslm() function. This is very similar
+# to lm() but is designed to handle time series. With multiple
+# seasonality, you need to specify the order K for each of the
+# seasonal periods.
+# 
+# tslm() is a wrapper for lm() accounting for trend and season.
+# 
+
+# Example on Taylor electricity consumption.
+# This model fails autocorrelation test, ie. lags are correlated so
+# residuals aren't white noise.
+autoplot(taylor)
+
+fit = tslm(taylor ~ fourier(taylor, K = c(10, 10)))
+summary(fit)
+checkresiduals(fit)
+
+fit %>%
+  forecast(newdata = data.frame(fourier(taylor, K = c(10,10), h = 960))) %>%
+  autoplot
+
+# Example on calls data, 5-min call volume for a bank.
+# 
+# The residuals in this case still fail the white noise tests, but
+# their autocorrelations are tiny, even though they are significant.
+# This is because the series is so long. It is often unrealistic to
+# have residuals that pass the tests for such long series. The effect
+# of the remaining correlations on the forecasts will be negligible.
+autoplot(calls)
+
+xreg = fourier(calls, K = c(10, 0))
+fit = auto.arima(calls, xreg = xreg, seasonal = FALSE, stationary = TRUE)
+summary(fit)
+checkresiduals(fit)
+
+fit %>%
+  forecast(xreg = fourier(calls, K = c(10, 0), h = 10 * 169)) %>%
+  autoplot
+
+# TBATS model.
+# 
+# Accounts for many families of functions,
+# - trigonometric terms for seasonality.
+# - Box-Cox transformations for heterogeinity
+# - ARMA errors for short-term dynamics
+# - Trend (possibly damped)
+# - Seasonal (including multiple and non-integer periods)
+# 
+# This is one of the most generic models, but it also makes it very
+# dangerous ecause the best fit model not always are even reasonable.
+# However, prediction intervals are often too wide and is very slow on
+# long time series.
+# 
+
+# Example on gasoline.
+# Parameters:
+#  1: Box-Cox parameter (1 means no transformation is required).
+#  {0,0}: ARMA error((0,0) means simples white noise error)
+#  —: damping parameter (dash means no damping)
+#  {<52.18, 12>}: Fourier terms (one season of 52.18 periods with K=14)
+# 
+gasoline %>% tbats %>% forecast %>% autoplot() +
+  xlab("Year") + ylab("1,000's of barrels per day")
+
+calls %>% window(start = 20) %>% tbats() %>% forecast() %>% 
+  autoplot() + xlab("Weeks") + ylab("Calls")
+
+# Example on gas price.
+autoplot(gas)
+
+gas %>% tbats() %>% forecast(h = 5 * 12) %>% autoplot
+
+# Example on a random walk.
+y = ts(rnorm(120,0,10) + 20*sin(2*pi*(1:120)/12), frequency=12)
+fit = tslm(y ~ trend + season) # inspect without season to see.
+summary(fit)
+
+fit %>% forecast %>% autoplot
+
+Acf(y)
+Pacf(y)
+CV(fit) # works with objects produced by lm and tslm.
+
+# STL model.
+# Stands for Season, Trend, Loess.
+# It decomposes time series into seasonal, trend, and irregular
+# components using loess().
+# 
+
+# Example on air passengers.
+plot(stlf(AirPassengers, lambda=BoxCox.lambda(AirPassengers)))
+
+# Example on random walk.
+y = ts(rnorm(120,0,10) + 20*sin(2*pi*(1:120)/12), frequency = 12)
+
+fit = stl(y)
+summary(fit)
+
+fit %>% forecast %>% autoplot
