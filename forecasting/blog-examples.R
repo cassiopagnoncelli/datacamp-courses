@@ -2,10 +2,10 @@
 # https://otexts.org/fpp2/
 # 
 # Pending learn:
+# - 5.8  Nonlinear regression
 # - 10   Forecasting hierarchical or grouped time series
 # - 11.2 Vector AutoRegressions
 # - 11.4 Bootstrapping and bagging.
-# - 
 # 
 # Other models:
 # Croston: strategy for products with intermitent (noncontinuous) demand.
