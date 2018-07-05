@@ -370,10 +370,14 @@ austa %>%
   forecast %>% 
   autoplot
 
-austa %>% Arima(order = c(0, 1, 1), include.constant = FALSE) %>% forecast() %>% autoplot()
-austa %>% Arima(order = c(2, 1, 3), include.constant = TRUE) %>% forecast() %>% autoplot()
-austa %>% Arima(order = c(0, 0, 1), include.constant = TRUE) %>% forecast() %>% autoplot()
-austa %>% Arima(order = c(0, 2, 1), include.constant = FALSE) %>% forecast() %>% autoplot()
+austa %>% Arima(order = c(0, 1, 1), include.constant = FALSE) %>% 
+  forecast() %>% autoplot()
+austa %>% Arima(order = c(2, 1, 3), include.constant = TRUE) %>% 
+  forecast() %>% autoplot()
+austa %>% Arima(order = c(0, 0, 1), include.constant = TRUE) %>% 
+  forecast() %>% autoplot()
+austa %>% Arima(order = c(0, 2, 1), include.constant = FALSE) %>% 
+  forecast() %>% autoplot()
 
 # ARIMA vs ETS comparison.
 fets <- function(x, h) forecast(ets(x), h = h)
