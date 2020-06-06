@@ -23,7 +23,7 @@ server = function(input, output, session) {
   })
   output$bmi <- renderText({
     bmi <- rval_bmi()
-    paste("Hi", isolate({ input$name }), ". Your BMI is", round(bmi, 1))
+    paste("Hi ", isolate({ input$name }), ". Your BMI is ", round(bmi, 1), sep='')
   })
 }
 
