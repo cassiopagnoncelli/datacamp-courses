@@ -1,0 +1,286 @@
+# Package tutorial
+
+## Creating a package
+
+``` r
+> library("usethis")
+> create_package("unitConverter")
+✔ Creating 'unitConverter/'
+✔ Setting active project to '/Users/cassio/src/test/unitConverter'
+✔ Creating 'R/'
+✔ Writing 'DESCRIPTION'
+Package: unitConverter
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R (parsed):
+    * First Last <first.last@example.com> [aut, cre] (YOUR-ORCID-ID)
+Description: What the package does (one paragraph).
+License: `use_mit_license()`, `use_gpl3_license()` or friends to
+    pick a license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+✔ Writing 'NAMESPACE'
+> dir(".")
+[1] "DESCRIPTION" "NAMESPACE"   "R"
+```
+
+Then edit `DESCRIPTION` accordingly. Do not change `NAMESPACE`.
+
+## Save data in your package
+
+``` r
+> library(readr)
+> temperature_data <- read_csv("data-raw/temperature.csv")
+> # Or use `x` below
+> x <- data.frame(a=c(1,2), b=c(3,4))
+> use_data(x)
+✔ Adding 'R' to Depends field in DESCRIPTION
+✔ Creating 'data/'
+✔ Setting LazyData to 'true' in 'DESCRIPTION'
+✔ Saving 'x' to 'data/x.rda'
+• Document your data (see 'https://r-pkgs.org/data.html')
+```
+
+This will generate a `data/` directory with the `.rda` file and make the data available to the package with `data(x)`.
+
+## R Markdown Tempalte
+
+``` r
+> use_rmarkdown_template("bla")
+✔ Creating 'inst/rmarkdown/templates/bla/skeleton/'
+✔ Writing 'inst/rmarkdown/templates/bla/template.yaml'
+✔ Writing 'inst/rmarkdown/templates/bla/skeleton/skeleton.Rmd'
+> use_rmarkdown_template("Distance Conversion Examples")
+...
+```
+
+## Store a function in a file
+
+``` r
+dump("function(x) x + 1", file="R/add_one.R")
+```
+
+Have another example at `R/hello_world.R`:
+
+```r
+#' Hello World Message
+#'
+#'   Dynamic hello world message
+#'
+#' @param name Adds the name to the cumpliment.
+#'
+#' @return A string containing the hello world message
+#'
+#' @seealso Read more in the [link here](https://google.com/).
+#'
+#' @examples{
+#'   \dontrun{
+#'     use_package("ggplot2")
+#'     use_package("dplyr", "suggests")
+#'     use_dev_package("glue")
+#'   }
+#' }
+#'
+#'
+#' @export
+hello_world <- function(name) sprintf("%s: Hello, world!", name)
+```
+
+## Install the package with devtools
+
+``` r
+# Install or update the package
+> devtools::install()
+...
+> library(spectrader)
+> spectrader:::wd()
+...
+> devtools::uninstall()
+```
+
+## Licensing
+
+``` r
+# MIT requires original copyright notice, used in software only
+> use_mit_license("Cassio Pagnoncelli")
+
+# Creative Commons requires does not require copyright notice, used in software,
+# datasets, text, and images.
+> use_cc0_license()
+```
+
+## Check package naming
+
+``` r
+> library("available")
+> available("horrendous")
+```
+
+## Check compliance
+
+Check files compliance, licensing, and a multitude of items for package compliance.
+
+``` r
+> library("devtools")
+> check()
+```
+
+## Load functions in development
+
+``` r
+> library(devtools)
+# Loads package contents into current R session and test functionality before
+# packaging.
+> load_all()
+```
+
+## Add dependency to the package
+
+``` r
+> library(usethis)
+> use_package("dplyr", type = "Imports", min_version = "1.0.0")
+```
+
+Avoid using
+
+```         
+Depends:
+    R (>= 4.4.0)
+```
+
+in the `DESCRIPTION` file. Use `Imports` instead.
+
+For optional, *suggested* packages, use
+
+``` r
+> use_package("ggplot2", type = "Suggests")
+```
+
+Now for depends,
+
+``` r
+> use_package("glue", type = "Depends")
+```
+
+## Exported vs non-exported functions
+
+Exported:
+
+-   Loaded with the package
+-   Call `use_packg()` directly after `library()` call
+-   Documented in help files
+-   Core package functionally
+
+Non-exported functions:
+
+-   Called with `:::`
+-   May be documented
+-   Support exported functions
+
+## Documentation
+
+Use Roxygen2 with the following structure:
+
+1.  Title
+2.  Description
+3.  Usage
+4.  Arguments
+5.  Returns and/or See Also
+6.  Examples
+
+``` r
+> library(roxygen2)
+> roxygenize()
+```
+
+This generates `man` files and updates the `NAMESPACE` file with the exported functions.
+
+## Unit Testing
+
+Combine `usethis` with `testthat` to create unit tests.
+
+``` r
+> library(usethis)
+> use_testthat()
+```
+
+Match files by prepending `tests/testthat/test-` to the function name as below
+
+-   `R/temp_converter.R` -\> `tests/testthat/test-temp_converter.R`
+
+Note that `use_test(name = "temp_converter")` will create the test file.
+
+Expectations:
+
+-   `expect_true()` and `expect_false()`
+-   `expect_equal()`: equality with small tolerance allowed
+-   `expect_identical()`: strict equality
+-   `expect_error()`: expect an error
+-   `expect_output()`: expect a message
+-   `expect_warning()`: expect a warning
+
+Now, to test one file, use `test_file("test-temp_conversion.R)`. Similarly, the examples in help files under `man` can be tested with `test_example("man/temp_converter.Rd)`. For testing all tests, run
+
+``` r
+> test_package("packageName")
+```
+
+## Package versioning
+
+Format: `<major>.<minor>.<patch>.<dev>`
+
+-   Major: breaking changes
+-   Minor: new features
+-   Patch: bug fixes
+-   Dev: development version.
+
+Dev is by default `9000` and should be removed in releases.
+
+Update it accordingly in `DESCRIPTION`.
+
+## Documenting data
+
+```r
+> use_r("temperature_data")
+```
+
+```r
+#' Temperature values and units
+#'
+#' Temperature values and corresponding unit (Celsius or Fahrenheit).
+#'
+#' @format Data frame with two columns and 1000 rows.
+#' \describe{
+#'  \item{temperature}{Temperature values}
+#'  \item{unit}{Temperature unit}
+#' }
+#' @examples
+#' head(temperature_data)
+temperature_data
+```
+
+Here's another example
+
+```r
+# Add header and description
+#' Distance values and units
+#'
+#' Distance values and corresponding unit (feet, meters, or inches)
+# Update format
+#' @format Data frame with two columns and 1000 rows
+# Document column names and information
+#' \describe{
+#' \item{value}{Numeric distance value}
+#' \item{unit}{Distance unit}
+#' }
+# Add example and string of data name
+#' @examples
+#'   distance_data
+"distance_data"
+```
+
+Then call `roxygenize()`.
+Optionally, call `devtools::document()` to update the documentation.
+
+Finally, call `devtools::check()` to check the package or just `check()`.
