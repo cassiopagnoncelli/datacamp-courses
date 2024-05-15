@@ -1,0 +1,18 @@
+Package: spectrader
+Type: Package
+Title: Trading framework
+Version: 0.0.0.9000
+Authors@R:
+    person("Cassio", "Pagnoncelli", , "cassiopagnoncelli@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0000-7114-7008"))
+Description: A backtesting framework in iterative fashion powered by R community
+  packages.
+License: Commercial
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.4.0)
+Imports: Rcpp (>= 1.0.12)
+LinkingTo: Rcpp
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
